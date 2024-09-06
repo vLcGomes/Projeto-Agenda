@@ -1,27 +1,23 @@
 from django import forms
 from django.core.exceptions import ValidationError
 from . import models
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.models import User
 
 
 class ContactForm(forms.ModelForm):
-
-    first_name = forms.CharField(
-        widget=forms.TextInput(
+    picture = forms.ImageField(
+        widget=forms.FileInput(
             attrs={
-                'class': 'classe-a classe-b',
-                'placeholder': 'Escreva aqui',
+                'accept': '/image/*'
             }
-        ),
-        help_text='Texto de ajuda para seu usuario'
+        )
     )
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
 
     class Meta:
         model = models.Contact
         fields = ('first_name', 'last_name', 'phone',
-                  'email', 'description', 'category')
+                  'email', 'description', 'category', 'picture')
 
     def clean(self):
         cleaned_data = self.cleaned_data
@@ -51,3 +47,28 @@ class ContactForm(forms.ModelForm):
             )
 
         return cleaned_data
+
+
+class RegisterForm(UserCreationForm):
+    first_name = forms.CharField(required=True)
+    last_name = forms.CharField(required=True)
+    first_name = forms.EmailField(required=True)
+
+    class Meta:
+        model = User
+        fields = ('first_name', 'last_name', 'email',
+                  'username', 'password1', 'password2',)
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+
+        if User.objects.filter(email=email).exists():
+            self.add_error(
+                'email',
+                ValidationError(
+                    'O email já pertence a um usuário',
+                    code='invalid',
+                )
+            )
+
+        return email
